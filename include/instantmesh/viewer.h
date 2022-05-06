@@ -17,7 +17,7 @@
 #include "widgets.h"
 #include "hierarchy.h"
 #include "field.h"
-#include "bvh.h"
+#include <instantmesh/bvh.h>
 #include "meshstats.h"
 #include <set>
 

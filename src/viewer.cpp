@@ -13,13 +13,13 @@
 
 #include <half.hpp>
 #include "viewer.h"
-#include "dedge.h"
+#include <instantmesh/dedge.h>
 #include "meshio.h"
 #include "normal.h"
 #include "extract.h"
-#include "subdivide.h"
-#include "reorder.h"
-#include "smoothcurve.h"
+#include <instantmesh/subdivide.h>
+#include <instantmesh/reorder.h>
+#include <instantmesh/smoothcurve.h>
 #include "gui_serializer.h"
 #include <resources.h>
 #include <pcg32.h>

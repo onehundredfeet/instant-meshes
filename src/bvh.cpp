@@ -11,7 +11,7 @@
     BSD-style license that can be found in the LICENSE.txt file.
 */
 
-#include "bvh.h"
+#include <instantmesh/bvh.h>
 
 struct Bins {
     static const int BIN_COUNT = 8;

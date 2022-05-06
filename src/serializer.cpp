@@ -11,7 +11,7 @@
     BSD-style license that can be found in the LICENSE.txt file.
 */
 
-#include "serializer.h"
+#include <instantmesh/serializer.h>
 #include <set>
 
 extern "C" {

@@ -15,7 +15,7 @@
 
 #pragma once
 
-#include "serializer.h"
+#include <instantmesh/serializer.h>
 #include <nanogui/glutil.h>
 #include <half.hpp>
 

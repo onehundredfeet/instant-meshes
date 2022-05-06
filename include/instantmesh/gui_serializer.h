@@ -16,7 +16,7 @@
 #pragma once
 
 #include "widgets.h"
-#include "serializer.h"
+#include <instantmesh/serializer.h>
 
 class GUISerializer : public Serializer {
 public:

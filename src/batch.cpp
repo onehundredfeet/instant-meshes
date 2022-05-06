@@ -11,16 +11,16 @@
     BSD-style license that can be found in the LICENSE.txt file.
 */
 
-#include "batch.h"
-#include "meshio.h"
-#include "dedge.h"
-#include "subdivide.h"
-#include "meshstats.h"
-#include "hierarchy.h"
-#include "field.h"
-#include "normal.h"
-#include "extract.h"
-#include "bvh.h"
+#include <batch.h>
+#include <meshio.h>
+#include <dedge.h>
+#include <subdivide.h>
+#include <meshstats.h>
+#include <hierarchy.h>
+#include <field.h>
+#include <normal.h>
+#include <extract.h>
+#include <bvh.h>
 
 void batch_process(const std::string &input, const std::string &output,
                    int rosy, int posy, Float scale, int face_count,

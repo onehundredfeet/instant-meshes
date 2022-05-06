@@ -12,8 +12,8 @@
     BSD-style license that can be found in the LICENSE.txt file.
 */
 
-#include "meshstats.h"
-#include "dedge.h"
+#include <instantmesh/meshstats.h>
+#include <instantmesh/dedge.h>
 
 MeshStats compute_mesh_stats(const MatrixXu &F, const MatrixXf &V,
                              bool deterministic,

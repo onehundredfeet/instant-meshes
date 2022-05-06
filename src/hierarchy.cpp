@@ -12,10 +12,10 @@
     BSD-style license that can be found in the LICENSE.txt file.
 */
 
-#include "hierarchy.h"
-#include "serializer.h"
-#include "dedge.h"
-#include "field.h"
+#include <instantmesh/hierarchy.h>
+#include <instantmesh/serializer.h>
+#include <instantmesh/dedge.h>
+#include <instantmesh/field.h>
 #include <parallel_stable_sort.h>
 #include <pcg32.h>
 

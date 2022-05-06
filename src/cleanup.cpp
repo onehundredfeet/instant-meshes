@@ -11,8 +11,8 @@
     BSD-style license that can be found in the LICENSE.txt file.
 */
 
-#include "dedge.h"
-#include "field.h"
+#include <instantmesh/dedge.h>
+#include <instantmesh/field.h>
 #include <set>
 
 void remove_nonmanifold(MatrixXu &F, MatrixXf &V, MatrixXf &Nf) {

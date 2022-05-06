@@ -13,7 +13,7 @@
 
 #include "batch.h"
 #include "viewer.h"
-#include "serializer.h"
+#include <instantmesh/serializer.h>
 #include <thread>
 #include <cstdlib>
 

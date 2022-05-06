@@ -13,11 +13,11 @@
     BSD-style license that can be found in the LICENSE.txt file.
 */
 
-#include "adjacency.h"
-#include "dedge.h"
-#include "bvh.h"
-#include "meshstats.h"
-#include "dset.h"
+#include <instantmesh/adjacency.h>
+#include <instantmesh/dedge.h>
+#include <instantmesh/bvh.h>
+#include <instantmesh/meshstats.h>
+#include <dset.h>
 #include <set>
 #include <map>
 

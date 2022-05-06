@@ -11,8 +11,8 @@
     BSD-style license that can be found in the LICENSE.txt file.
 */
 
-#include "meshio.h"
-#include "normal.h"
+#include <instantmesh/meshio.h>
+#include <instantmesh/normal.h>
 #include <unordered_map>
 #include <fstream>
 #if !defined(_WIN32)

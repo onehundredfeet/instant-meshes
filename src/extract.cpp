@@ -11,13 +11,13 @@
     BSD-style license that can be found in the LICENSE.txt file.
 */
 
-#include "extract.h"
-#include "field.h"
-#include "dset.h"
-#include "dedge.h"
-#include "reorder.h"
-#include "bvh.h"
-#include "cleanup.h"
+#include <instantmesh/extract.h>
+#include <instantmesh/field.h>
+#include <dset.h>
+#include <instantmesh/dedge.h>
+#include <instantmesh/reorder.h>
+#include <instantmesh/bvh.h>
+#include <instantmesh/cleanup.h>
 #include <tbb/concurrent_vector.h>
 #include <parallel_stable_sort.h>
 #include <unordered_set>
