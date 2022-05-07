@@ -88,12 +88,12 @@ void batch_process(const std::string &input, const std::string &output,
         Float face_area = stats.mSurfaceArea / face_count;
         scale = posy == 4 ? std::sqrt(face_area) : (2*std::sqrt(face_area * std::sqrt(1.f/3.f)));
     }
-
+#ifdef INSTANT_PRINT
     cout << "Output mesh goals (approximate)" << endl;
     cout << "   Vertex count           = " << vertex_count << endl;
     cout << "   Face count             = " << face_count << endl;
     cout << "   Edge length            = " << scale << endl;
-
+#endif
     MultiResolutionHierarchy mRes;
 
     if (!pointcloud) {
@@ -101,9 +101,11 @@ void batch_process(const std::string &input, const std::string &output,
         VectorXu V2E, E2E;
         VectorXb boundary, nonManifold;
         if (stats.mMaximumEdgeLength*2 > scale || stats.mMaximumEdgeLength > stats.mAverageEdgeLength * 2) {
+            #ifdef INSTANT_PRINT
             cout << "Input mesh is too coarse for the desired output edge length "
                     "(max input mesh edge length=" << stats.mMaximumEdgeLength
                  << "), subdividing .." << endl;
+                 #endif
             build_dedge(F, V, V2E, E2E, boundary, nonManifold);
             subdivide(F, V, V2E, E2E, boundary, nonManifold, std::min(scale/2, (Float) stats.mAverageEdgeLength*2), deterministic);
         }

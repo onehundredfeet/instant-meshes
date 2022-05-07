@@ -3126,9 +3126,11 @@ void Viewer::loadInput(std::string filename, Float creaseAngle, Float scale,
         /* Subdivide the mesh if necessary */
         if (mMeshStats.mMaximumEdgeLength*2 > scale || mMeshStats.mMaximumEdgeLength > mMeshStats.mAverageEdgeLength * 2) {
             VectorXu V2E, E2E;
+            #ifdef INSTANT_MESH
             cout << "Input mesh is too coarse for the desired output edge length "
                     "(max input mesh edge length=" << mMeshStats.mMaximumEdgeLength
                  << "), subdividing .." << endl;
+                 #endif
             build_dedge(F, V, V2E, E2E, mBoundaryVertices, mNonmanifoldVertices,
                         mProgress);
             subdivide(F, V, V2E, E2E, mBoundaryVertices,

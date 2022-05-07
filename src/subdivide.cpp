@@ -31,8 +31,10 @@ void subdivide(MatrixXu &F, MatrixXf &V, VectorXu &V2E, VectorXu &E2E,
 
     maxLength *= maxLength;
 
+    #ifdef INSTANT_PRINT
     cout << "Subdividing mesh .. ";
     cout.flush();
+    #endif
     Timer<> timer;
 
     if (progress)
@@ -175,7 +177,9 @@ void subdivide(MatrixXu &F, MatrixXf &V, VectorXu &V2E, VectorXu &E2E,
     nonmanifold.conservativeResize(nV);
     E2E.conservativeResize(nF*3);
 
+#ifdef INSTANT_PRINT
     cout << "done. (split " << nSplit << " edges, took "
          << timeString(timer.value()) << ", new V=" << V.cols()
          << ", F=" << F.cols() << ", took " << timeString(timer.value()) << ")" << endl;
+         #endif
 }

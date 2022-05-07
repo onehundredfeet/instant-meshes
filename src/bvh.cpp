@@ -27,17 +27,17 @@ struct BVHBuildTask : public tbb::task {
     uint32_t *start, *end, *temp;
 
     BVHBuildTask(BVH &bvh, uint32_t node_idx, uint32_t *start, uint32_t *end, uint32_t *temp)
-        : bvh(bvh), node_idx(node_idx), start(start), end(end), temp(temp) { }
+        : bvh(bvh), node_idx(node_idx), start(start), end(end), temp(temp) {}
 
     task *execute() {
         const MatrixXu &F = *bvh.mF;
         const MatrixXf &V = *bvh.mV;
         bool pointcloud = F.size() == 0;
-        uint32_t size = end-start, total_size = pointcloud ? V.cols() : F.cols();
+        uint32_t size = end - start, total_size = pointcloud ? V.cols() : F.cols();
         BVHNode &node = bvh.mNodes[node_idx];
 
         if (size < SERIAL_THRESHOLD) {
-            tbb::blocked_range<uint32_t> range(start-bvh.mIndices, end-bvh.mIndices);
+            tbb::blocked_range<uint32_t> range(start - bvh.mIndices, end - bvh.mIndices);
             const ProgressCallback &progress = bvh.mProgress;
             SHOW_PROGRESS_RANGE(range, total_size, "Constructing Bounding Volume Hierarchy");
             execute_serially(bvh, node_idx, start, end, temp);
@@ -46,7 +46,7 @@ struct BVHBuildTask : public tbb::task {
 
         int axis = node.aabb.largestAxis();
         Float min = node.aabb.min[axis], max = node.aabb.max[axis],
-              inv_bin_size = Bins::BIN_COUNT / (max-min);
+              inv_bin_size = Bins::BIN_COUNT / (max - min);
 
         Bins bins = tbb::parallel_reduce(
             tbb::blocked_range<uint32_t>(0u, size, GRAIN_SIZE),
@@ -55,13 +55,13 @@ struct BVHBuildTask : public tbb::task {
                 for (uint32_t i = range.begin(); i != range.end(); ++i) {
                     uint32_t f = start[i];
                     Float centroid = pointcloud ? V(axis, f)
-                         : ((1.0f / 3.0f) * (V(axis, F(0, f)) +
-                                             V(axis, F(1, f)) +
-                                             V(axis, F(2, f))));
+                                                : ((1.0f / 3.0f) * (V(axis, F(0, f)) +
+                                                                    V(axis, F(1, f)) +
+                                                                    V(axis, F(2, f))));
 
                     int index = std::min(std::max(
-                        (int) ((centroid - min) * inv_bin_size), 0),
-                        (Bins::BIN_COUNT - 1));
+                                             (int)((centroid - min) * inv_bin_size), 0),
+                                         (Bins::BIN_COUNT - 1));
 
                     result.counts[index]++;
                     AABB &bin_bounds = result.bounds[index];
@@ -77,31 +77,30 @@ struct BVHBuildTask : public tbb::task {
             },
             [](const Bins &b1, const Bins &b2) {
                 Bins result;
-                for (int i=0; i < Bins::BIN_COUNT; ++i) {
+                for (int i = 0; i < Bins::BIN_COUNT; ++i) {
                     result.counts[i] = b1.counts[i] + b2.counts[i];
                     result.bounds[i] = AABB::merge(b1.bounds[i], b2.bounds[i]);
                 }
                 return result;
-            }
-        );
+            });
 
         AABB bounds_left[Bins::BIN_COUNT];
         bounds_left[0] = bins.bounds[0];
-        for (int i=1; i<Bins::BIN_COUNT; ++i) {
-            bins.counts[i] += bins.counts[i-1];
-            bounds_left[i] = AABB::merge(bounds_left[i-1], bins.bounds[i]);
+        for (int i = 1; i < Bins::BIN_COUNT; ++i) {
+            bins.counts[i] += bins.counts[i - 1];
+            bounds_left[i] = AABB::merge(bounds_left[i - 1], bins.bounds[i]);
         }
-        AABB bounds_right = bins.bounds[Bins::BIN_COUNT-1];
+        AABB bounds_right = bins.bounds[Bins::BIN_COUNT - 1];
         int64_t best_index = -1;
         Float best_cost = BVH::T_tri * size;
         Float tri_factor = BVH::T_tri / node.aabb.surfaceArea();
         AABB best_bounds_right;
 
-        for (int i=Bins::BIN_COUNT - 2; i >= 0; --i) {
+        for (int i = Bins::BIN_COUNT - 2; i >= 0; --i) {
             uint32_t prims_left = bins.counts[i], prims_right = (end - start) - bins.counts[i];
             Float sah_cost = 2.0f * BVH::T_aabb +
-                tri_factor * (prims_left * bounds_left[i].surfaceArea() +
-                              prims_right * bounds_right.surfaceArea());
+                             tri_factor * (prims_left * bounds_left[i].surfaceArea() +
+                                           prims_right * bounds_right.surfaceArea());
             if (sah_cost < best_cost) {
                 best_cost = sah_cost;
                 best_index = i;
@@ -118,10 +117,10 @@ struct BVHBuildTask : public tbb::task {
         }
 
         uint32_t left_count = bins.counts[best_index];
-        int node_idx_left = node_idx+1;
-        int node_idx_right = node_idx+2*left_count;
+        int node_idx_left = node_idx + 1;
+        int node_idx_right = node_idx + 2 * left_count;
 
-        bvh.mNodes[node_idx_left ].aabb = bounds_left[best_index];
+        bvh.mNodes[node_idx_left].aabb = bounds_left[best_index];
         bvh.mNodes[node_idx_right].aabb = best_bounds_right;
         node.inner.rightChild = node_idx_right;
         node.inner.unused = 0;
@@ -134,10 +133,10 @@ struct BVHBuildTask : public tbb::task {
                 for (uint32_t i = range.begin(); i != range.end(); ++i) {
                     uint32_t f = start[i];
                     Float centroid = pointcloud ? V(axis, f)
-                         : ((1.0f / 3.0f) * (V(axis, F(0, f)) +
-                                             V(axis, F(1, f)) +
-                                             V(axis, F(2, f))));
-                    int index = (int) ((centroid - min) * inv_bin_size);
+                                                : ((1.0f / 3.0f) * (V(axis, F(0, f)) +
+                                                                    V(axis, F(1, f)) +
+                                                                    V(axis, F(2, f))));
+                    int index = (int)((centroid - min) * inv_bin_size);
                     (index <= best_index ? count_left : count_right)++;
                 }
                 uint32_t idx_l = offset_left.fetch_add(count_left);
@@ -145,28 +144,27 @@ struct BVHBuildTask : public tbb::task {
                 for (uint32_t i = range.begin(); i != range.end(); ++i) {
                     uint32_t f = start[i];
                     Float centroid = pointcloud ? V(axis, f)
-                         : ((1.0f / 3.0f) * (V(axis, F(0, f)) +
-                                             V(axis, F(1, f)) +
-                                             V(axis, F(2, f))));
-                    int index = (int) ((centroid - min) * inv_bin_size);
+                                                : ((1.0f / 3.0f) * (V(axis, F(0, f)) +
+                                                                    V(axis, F(1, f)) +
+                                                                    V(axis, F(2, f))));
+                    int index = (int)((centroid - min) * inv_bin_size);
                     if (index <= best_index)
                         temp[idx_l++] = f;
                     else
                         temp[idx_r++] = f;
                 }
-            }
-        );
+            });
         memcpy(start, temp, size * sizeof(uint32_t));
         assert(offset_left == left_count && offset_right == size);
 
         /* Create an empty parent task */
-        tbb::task& c = *new (allocate_continuation()) tbb::empty_task;
+        tbb::task &c = *new (allocate_continuation()) tbb::empty_task;
         c.set_ref_count(2);
 
         /* Post right subtree to scheduler */
         BVHBuildTask &b = *new (c.allocate_child())
-            BVHBuildTask(bvh, node_idx_right, start + left_count,
-                         end, temp + left_count);
+                              BVHBuildTask(bvh, node_idx_right, start + left_count,
+                                           end, temp + left_count);
         spawn(b);
 
         /* Directly start working on left subtree */
@@ -178,30 +176,29 @@ struct BVHBuildTask : public tbb::task {
     }
 
     static void execute_serially(BVH &bvh, uint32_t node_idx, uint32_t *start, uint32_t *end, uint32_t *temp) {
-        uint32_t size = end-start;
+        uint32_t size = end - start;
         BVHNode &node = bvh.mNodes[node_idx];
         const MatrixXu &F = *bvh.mF;
         const MatrixXf &V = *bvh.mV;
         Float best_cost = BVH::T_tri * size;
         int64_t best_index = -1, best_axis = -1;
-        float *left_areas = (float *) temp;
+        float *left_areas = (float *)temp;
         bool pointcloud = F.size() == 0;
 
-        for (int axis=0; axis<3; ++axis) {
+        for (int axis = 0; axis < 3; ++axis) {
             if (pointcloud) {
                 std::sort(start, end, [&](uint32_t f1, uint32_t f2) {
                     return V(axis, f1) < V(axis, f2);
                 });
             } else {
                 std::sort(start, end, [&](uint32_t f1, uint32_t f2) {
-                    return
-                        (V(axis, F(0, f1)) + V(axis, F(1, f1)) + V(axis, F(2, f1))) <
-                        (V(axis, F(0, f2)) + V(axis, F(1, f2)) + V(axis, F(2, f2)));
+                    return (V(axis, F(0, f1)) + V(axis, F(1, f1)) + V(axis, F(2, f1))) <
+                           (V(axis, F(0, f2)) + V(axis, F(1, f2)) + V(axis, F(2, f2)));
                 });
             }
 
             AABB aabb;
-            for (uint32_t i = 0; i<size; ++i) {
+            for (uint32_t i = 0; i < size; ++i) {
                 uint32_t f = *(start + i);
                 if (pointcloud) {
                     aabb.expandBy(V.col(f));
@@ -210,7 +207,7 @@ struct BVHBuildTask : public tbb::task {
                     aabb.expandBy(V.col(F(1, f)));
                     aabb.expandBy(V.col(F(2, f)));
                 }
-                left_areas[i] = (float) aabb.surfaceArea();
+                left_areas[i] = (float)aabb.surfaceArea();
             }
             if (axis == 0)
                 node.aabb = aabb;
@@ -218,7 +215,7 @@ struct BVHBuildTask : public tbb::task {
             aabb.clear();
 
             Float tri_factor = BVH::T_tri / node.aabb.surfaceArea();
-            for (uint32_t i = size-1; i>=1; --i) {
+            for (uint32_t i = size - 1; i >= 1; --i) {
                 uint32_t f = *(start + i);
                 if (pointcloud) {
                     aabb.expandBy(V.col(f));
@@ -228,14 +225,14 @@ struct BVHBuildTask : public tbb::task {
                     aabb.expandBy(V.col(F(2, f)));
                 }
 
-                float left_area = left_areas[i-1];
+                float left_area = left_areas[i - 1];
                 float right_area = aabb.surfaceArea();
                 uint32_t prims_left = i;
-                uint32_t prims_right = size-i;
+                uint32_t prims_right = size - i;
 
                 Float sah_cost = 2.0f * BVH::T_aabb +
-                    tri_factor * (prims_left * left_area +
-                                  prims_right * right_area);
+                                 tri_factor * (prims_left * left_area +
+                                               prims_right * right_area);
                 if (sah_cost < best_cost) {
                     best_cost = sah_cost;
                     best_index = i;
@@ -248,10 +245,9 @@ struct BVHBuildTask : public tbb::task {
             /* Splitting does not reduce the cost, make a leaf */
             node.leaf.flag = 1;
             node.leaf.start = start - bvh.mIndices;
-            node.leaf.size  = size;
+            node.leaf.size = size;
             return;
         }
-
 
         if (pointcloud) {
             std::sort(start, end, [&](uint32_t f1, uint32_t f2) {
@@ -259,32 +255,31 @@ struct BVHBuildTask : public tbb::task {
             });
         } else {
             std::sort(start, end, [&](uint32_t f1, uint32_t f2) {
-                return
-                    (V(best_axis, F(0, f1)) + V(best_axis, F(1, f1)) + V(best_axis, F(2, f1))) <
-                    (V(best_axis, F(0, f2)) + V(best_axis, F(1, f2)) + V(best_axis, F(2, f2)));
+                return (V(best_axis, F(0, f1)) + V(best_axis, F(1, f1)) + V(best_axis, F(2, f1))) <
+                       (V(best_axis, F(0, f2)) + V(best_axis, F(1, f2)) + V(best_axis, F(2, f2)));
             });
         }
 
         uint32_t left_count = best_index;
-        int node_idx_left = node_idx+1;
-        int node_idx_right = node_idx+2*left_count;
+        int node_idx_left = node_idx + 1;
+        int node_idx_right = node_idx + 2 * left_count;
         node.inner.rightChild = node_idx_right;
         node.inner.unused = 0;
 
         execute_serially(bvh, node_idx_left, start, start + left_count, temp);
-        execute_serially(bvh, node_idx_right, start+left_count, end, temp + left_count);
+        execute_serially(bvh, node_idx_right, start + left_count, end, temp + left_count);
     }
 };
 
 BVH::BVH(const MatrixXu *F, const MatrixXf *V, const MatrixXf *N, const AABB &aabb)
-: mIndices(nullptr), mF(F), mV(V), mN(N), mDiskRadius(0.f) {
+    : mIndices(nullptr), mF(F), mV(V), mN(N), mDiskRadius(0.f) {
     if (mF->size() > 0) {
-        mNodes.resize(2*mF->cols());
+        mNodes.resize(2 * mF->cols());
         memset(mNodes.data(), 0, sizeof(BVHNode) * mNodes.size());
         mNodes[0].aabb = aabb;
         mIndices = new uint32_t[mF->cols()];
     } else if (mV->size() > 0) {
-        mNodes.resize(2*mV->cols());
+        mNodes.resize(2 * mV->cols());
         memset(mNodes.data(), 0, sizeof(BVHNode) * mNodes.size());
         mNodes[0].aabb = aabb;
         mIndices = new uint32_t[mV->cols()];
@@ -301,8 +296,10 @@ void BVH::build(const ProgressCallback &progress) {
         throw std::runtime_error("BVH Node is not packed! Investigate compiler settings.");
 #endif
 
+#ifdef INSTANT_PRINT
     cout << "Constructing Bounding Volume Hierarchy .. ";
     cout.flush();
+#endif
 
     bool pointcloud = mF->size() == 0;
     uint32_t total_size = pointcloud ? mV->cols() : mF->cols();
@@ -312,12 +309,13 @@ void BVH::build(const ProgressCallback &progress) {
 
     Timer<> timer;
     uint32_t *temp = new uint32_t[total_size];
-    BVHBuildTask& task = *new(tbb::task::allocate_root())
-        BVHBuildTask(*this, 0u, mIndices, mIndices + total_size, temp);
+    BVHBuildTask &task = *new (tbb::task::allocate_root())
+                             BVHBuildTask(*this, 0u, mIndices, mIndices + total_size, temp);
     tbb::task::spawn_root_and_wait(task);
     delete[] temp;
 
     std::pair<Float, uint32_t> stats = statistics();
+#ifdef INSTANT_PRINT
     cout << "done. ("
          << "SAH cost = " << stats.first << ", "
          << "nodes = " << stats.second << ", "
@@ -326,13 +324,14 @@ void BVH::build(const ProgressCallback &progress) {
 
     cout.precision(4);
     cout << "Compressing BVH node storage to "
-         << 100 * stats.second / (float) mNodes.size() << "% of its original size .. ";
+         << 100 * stats.second / (float)mNodes.size() << "% of its original size .. ";
     cout.flush();
+#endif
 
     std::vector<BVHNode> compressed(stats.second);
     std::vector<uint32_t> skipped_accum(mNodes.size());
 
-    for (int64_t i = stats.second-1, j = mNodes.size(), skipped = 0; i >= 0; --i) {
+    for (int64_t i = stats.second - 1, j = mNodes.size(), skipped = 0; i >= 0; --i) {
         while (mNodes[--j].isUnused())
             skipped++;
         BVHNode &new_node = compressed[i];
@@ -347,18 +346,20 @@ void BVH::build(const ProgressCallback &progress) {
     }
 
     mNodes = std::move(compressed);
-
+#ifdef INSTANT_PRINT
     cout << "done. (took " << timeString(timer.value()) << ")" << endl;
-
+#endif
     if (pointcloud) {
+#ifdef INSTANT_PRINT
         cout << "Assigning disk radius .. ";
         cout.flush();
+#endif
 
         auto map = [&](const tbb::blocked_range<uint32_t> &range, double radius_sum) -> double {
             std::vector<std::pair<Float, uint32_t>> result;
             for (uint32_t i = range.begin(); i < range.end(); ++i) {
                 Float radius = std::numeric_limits<double>::infinity();
-                if (findNearest(mV->col(i), radius) != (uint32_t) -1)
+                if (findNearest(mV->col(i), radius) != (uint32_t)-1)
                     radius_sum += radius;
             }
 
@@ -370,11 +371,13 @@ void BVH::build(const ProgressCallback &progress) {
             return radius_sum1 + radius_sum2;
         };
 
-        tbb::blocked_range<uint32_t> range(0u, (uint32_t) mV->cols(), GRAIN_SIZE);
-        mDiskRadius = tbb::parallel_deterministic_reduce(range, 0, map, reduce) / (double) range.size();
+        tbb::blocked_range<uint32_t> range(0u, (uint32_t)mV->cols(), GRAIN_SIZE);
+        mDiskRadius = tbb::parallel_deterministic_reduce(range, 0, map, reduce) / (double)range.size();
         mDiskRadius *= 3;
         refitBoundingBoxes();
+#ifdef INSTANT_PRINT
         cout << "done. (took " << timeString(timer.value()) << ")" << endl;
+#endif
     }
 
     mProgress = nullptr;
@@ -403,7 +406,7 @@ bool BVH::rayIntersect(Ray ray, uint32_t &idx, Float &t, Vector2f *uv) const {
             if (node.isInner()) {
                 stack[stack_idx++] = node.inner.rightChild;
                 node_idx++;
-                assert(stack_idx<64);
+                assert(stack_idx < 64);
             } else {
                 Float _t;
                 Vector2f _uv;
@@ -438,7 +441,7 @@ bool BVH::rayIntersect(Ray ray, uint32_t &idx, Float &t, Vector2f *uv) const {
             if (node.isInner()) {
                 stack[stack_idx++] = node.inner.rightChild;
                 node_idx++;
-                assert(stack_idx<64);
+                assert(stack_idx < 64);
             } else {
                 Float _t;
                 for (uint32_t i = node.start(), end = node.end(); i < end; ++i) {
@@ -480,7 +483,7 @@ bool BVH::rayIntersect(Ray ray) const {
             if (node.isInner()) {
                 stack[stack_idx++] = node.inner.rightChild;
                 node_idx++;
-                assert(stack_idx<64);
+                assert(stack_idx < 64);
             } else {
                 Float t;
                 Vector2f uv;
@@ -507,7 +510,7 @@ bool BVH::rayIntersect(Ray ray) const {
             if (node.isInner()) {
                 stack[stack_idx++] = node.inner.rightChild;
                 node_idx++;
-                assert(stack_idx<64);
+                assert(stack_idx < 64);
             } else {
                 Float t;
                 for (uint32_t i = node.start(), end = node.end(); i < end; ++i)
@@ -531,7 +534,7 @@ void BVH::findNearestWithRadius(const Vector3f &p, Float radius,
 
     uint32_t node_idx = 0, stack[64];
     uint32_t stack_idx = 0;
-    Float radius2 = radius*radius;
+    Float radius2 = radius * radius;
 
     while (true) {
         const BVHNode &node = mNodes[node_idx];
@@ -545,20 +548,20 @@ void BVH::findNearestWithRadius(const Vector3f &p, Float radius,
         if (node.isInner()) {
             stack[stack_idx++] = node.inner.rightChild;
             node_idx++;
-            assert(stack_idx<64);
+            assert(stack_idx < 64);
         } else {
             uint32_t start = node.leaf.start, end = start + node.leaf.size;
             for (uint32_t i = start; i < end; ++i) {
                 uint32_t f = mIndices[i];
                 Vector3f pointPos = Vector3f::Zero();
                 if (mF->size() > 0) {
-                    for (int j=0; j<3; ++j)
+                    for (int j = 0; j < 3; ++j)
                         pointPos += mV->col((*mF)(j, f));
                     pointPos *= 1.0f / 3.0f;
                 } else {
                     pointPos = mV->col(f);
                 }
-                Float pointDist2 = (pointPos-p).squaredNorm();
+                Float pointDist2 = (pointPos - p).squaredNorm();
                 if (pointDist2 < radius2 && (pointDist2 != 0 || includeSelf))
                     result.push_back(f);
             }
@@ -573,8 +576,8 @@ void BVH::findNearestWithRadius(const Vector3f &p, Float radius,
 uint32_t BVH::findNearest(const Vector3f &p, Float &radius, bool includeSelf) const {
     uint32_t node_idx = 0, stack[64];
     uint32_t stack_idx = 0;
-    Float radius2 = radius*radius;
-    uint32_t result = (uint32_t) -1;
+    Float radius2 = radius * radius;
+    uint32_t result = (uint32_t)-1;
 
     while (true) {
         const BVHNode &node = mNodes[node_idx];
@@ -598,20 +601,20 @@ uint32_t BVH::findNearest(const Vector3f &p, Float &radius, bool includeSelf) co
                 if (distLeft < radius2)
                     stack[stack_idx++] = left;
             }
-            assert(stack_idx<64);
+            assert(stack_idx < 64);
         } else {
             uint32_t start = node.leaf.start, end = start + node.leaf.size;
             for (uint32_t i = start; i < end; ++i) {
                 uint32_t f = mIndices[i];
                 Vector3f pointPos = Vector3f::Zero();
                 if (mF->size() > 0) {
-                    for (int j=0; j<3; ++j)
+                    for (int j = 0; j < 3; ++j)
                         pointPos += mV->col((*mF)(j, f));
                     pointPos *= 1.0f / 3.0f;
                 } else {
                     pointPos = mV->col(f);
                 }
-                Float pointDist2 = (pointPos-p).squaredNorm();
+                Float pointDist2 = (pointPos - p).squaredNorm();
 
                 if (pointDist2 < radius2 && (pointDist2 != 0 || includeSelf)) {
                     radius2 = pointDist2;
@@ -635,7 +638,7 @@ void BVH::findKNearest(const Vector3f &p, uint32_t k, Float &radius,
 
     uint32_t node_idx = 0, stack[64];
     uint32_t stack_idx = 0;
-    Float radius2 = radius*radius;
+    Float radius2 = radius * radius;
     bool isHeap = false;
     auto comp = [](const std::pair<Float, uint32_t> &v1, const std::pair<Float, uint32_t> &v2) {
         return v1.first < v2.first;
@@ -663,20 +666,20 @@ void BVH::findKNearest(const Vector3f &p, uint32_t k, Float &radius,
                 if (distLeft < radius2)
                     stack[stack_idx++] = left;
             }
-            assert(stack_idx<64);
+            assert(stack_idx < 64);
         } else {
             uint32_t start = node.leaf.start, end = start + node.leaf.size;
             for (uint32_t i = start; i < end; ++i) {
                 uint32_t f = mIndices[i];
                 Vector3f pointPos = Vector3f::Zero();
                 if (mF->size() > 0) {
-                    for (int j=0; j<3; ++j)
+                    for (int j = 0; j < 3; ++j)
                         pointPos += mV->col((*mF)(j, f));
                     pointPos *= 1.0f / 3.0f;
                 } else {
                     pointPos = mV->col(f);
                 }
-                Float pointDist2 = (pointPos-p).squaredNorm();
+                Float pointDist2 = (pointPos - p).squaredNorm();
 
                 if (pointDist2 < radius2 && (pointDist2 != 0 || includeSelf)) {
                     if (result.size() < k) {
@@ -709,15 +712,15 @@ void BVH::findKNearest(const Vector3f &p, uint32_t k, Float &radius,
 
 void BVH::findKNearest(const Vector3f &p, const Vector3f &n, uint32_t k,
                        Float &radius,
-                       std::vector<std::pair<Float, uint32_t> > &result,
+                       std::vector<std::pair<Float, uint32_t>> &result,
                        Float angleThresh, bool includeSelf) const {
     result.clear();
 
     uint32_t node_idx = 0, stack[64];
     uint32_t stack_idx = 0;
-    Float radius2 = radius*radius;
+    Float radius2 = radius * radius;
     bool isHeap = false;
-    angleThresh = std::cos(angleThresh * M_PI/180);
+    angleThresh = std::cos(angleThresh * M_PI / 180);
     auto comp = [](const std::pair<Float, uint32_t> &v1, const std::pair<Float, uint32_t> &v2) {
         return v1.first < v2.first;
     };
@@ -744,14 +747,14 @@ void BVH::findKNearest(const Vector3f &p, const Vector3f &n, uint32_t k,
                 if (distLeft < radius2)
                     stack[stack_idx++] = left;
             }
-            assert(stack_idx<64);
+            assert(stack_idx < 64);
         } else {
             uint32_t start = node.leaf.start, end = start + node.leaf.size;
             for (uint32_t i = start; i < end; ++i) {
                 uint32_t f = mIndices[i];
                 Vector3f pointPos = Vector3f::Zero();
                 if (mF->size() > 0) {
-                    for (int j=0; j<3; ++j)
+                    for (int j = 0; j < 3; ++j)
                         pointPos += mV->col((*mF)(j, f));
                     pointPos *= 1.0f / 3.0f;
                 } else {
@@ -759,12 +762,12 @@ void BVH::findKNearest(const Vector3f &p, const Vector3f &n, uint32_t k,
                 }
                 Vector3f pointNormal = Vector3f::Zero();
                 if (mF->size() > 0) {
-                    for (int j=0; j<3; ++j)
+                    for (int j = 0; j < 3; ++j)
                         pointNormal += mN->col((*mF)(j, f));
                 } else {
                     pointNormal = mN->col(f);
                 }
-                Float pointDist2 = (pointPos-p).squaredNorm();
+                Float pointDist2 = (pointPos - p).squaredNorm();
 
                 if (pointDist2 < radius2 && (pointDist2 != 0 || includeSelf) && pointNormal.dot(n) > angleThresh) {
                     if (result.size() < k) {
@@ -837,7 +840,7 @@ bool BVH::rayIntersectDisk(const Ray &ray, uint32_t i, Float &t) const {
 
     t = (n.dot(v) - n.dot(ray.o)) / dp;
 
-    return (ray(t)-v).squaredNorm() < mDiskRadius*mDiskRadius;
+    return (ray(t) - v).squaredNorm() < mDiskRadius * mDiskRadius;
 }
 
 void BVH::printStatistics() const {
@@ -860,12 +863,12 @@ std::pair<Float, uint32_t> BVH::statistics(uint32_t node_idx) const {
         Float saRight = mNodes[node.inner.rightChild].aabb.surfaceArea();
         Float saCur = node.aabb.surfaceArea();
         Float sahCost = 2 * BVH::T_aabb + (saLeft * stats_left.first +
-                                           saRight * stats_right.first) / saCur;
+                                           saRight * stats_right.first) /
+                                              saCur;
 
         return std::make_pair(
             sahCost,
-            stats_left.second + stats_right.second + 1u
-        );
+            stats_left.second + stats_right.second + 1u);
     }
 }
 
@@ -876,16 +879,15 @@ BVH::~BVH() {
 void BVH::refitBoundingBoxes(uint32_t node_idx) {
     BVHNode &node = mNodes[node_idx];
     if (node.isLeaf()) {
-        for (uint32_t i=node.start(); i<node.end(); ++i) {
+        for (uint32_t i = node.start(); i < node.end(); ++i) {
             uint32_t j = mIndices[i];
             const Vector3f &p = mV->col(j), &n = mN->col(j);
             Vector3f s, t;
             coordinate_system(n, s, t);
             AABB aabb;
-            for (int k=0; k<4; ++k)
-                aabb.expandBy(p + mDiskRadius *  (
-                    ((k&1)*2 - 1) * s +
-                    ((k&2) - 1) * t));
+            for (int k = 0; k < 4; ++k)
+                aabb.expandBy(p + mDiskRadius * (((k & 1) * 2 - 1) * s +
+                                                 ((k & 2) - 1) * t));
             node.aabb = aabb;
         }
     } else {
@@ -895,4 +897,3 @@ void BVH::refitBoundingBoxes(uint32_t node_idx) {
         node.aabb = AABB::merge(mNodes[left].aabb, mNodes[right].aabb);
     }
 }
-

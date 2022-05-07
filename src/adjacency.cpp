@@ -25,8 +25,10 @@ AdjacencyMatrix generate_adjacency_matrix_uniform(
     const MatrixXu &F, const VectorXu &V2E, const VectorXu &E2E,
     const VectorXb &nonManifold, const ProgressCallback &progress) {
     VectorXu neighborhoodSize(V2E.size() + 1);
+    #ifdef INSTANT_PRINT
     cout << "Generating adjacency matrix .. ";
     cout.flush();
+    #endif
     Timer<> timer;
 
     tbb::parallel_for(
@@ -92,7 +94,9 @@ AdjacencyMatrix generate_adjacency_matrix_uniform(
         }
     );
 
+#ifdef INSTANT_PRINT
     cout << "done. (took " << timeString(timer.value()) << ")" << endl;
+    #endif
 
     return adj;
 }
@@ -214,7 +218,9 @@ generate_adjacency_matrix_cotan(const MatrixXu &F, const MatrixXf &V,
             SHOW_PROGRESS_RANGE(range, V.cols(), "Computing cotangent Laplacian (2/2)");
         }
     );
+    #ifdef INSTANT_PRINT
     cout << "done. (took " << timeString(timer.value()) << ")" << endl;
+    #endif
     return adj;
 }
 
@@ -333,7 +339,8 @@ AdjacencyMatrix generate_adjacency_matrix_pointcloud(
        is a biased estimate due to the kNN queries, but it's convenient and
        reasonably accurate) */
     stats.mSurfaceArea = M_PI * stats.mAverageEdgeLength*stats.mAverageEdgeLength * 0.5f * V.cols();
-
+#ifdef INSTANT_PRINT
     cout << "done. (took " << timeString(timer.value()) << ")" << endl;
+    #endif
     return adj;
 }

@@ -209,7 +209,9 @@ Serializer::Serializer(const std::string &filename, bool compatibilityMode, cons
     for (auto c : callbackStates)
         delete c;
 
+    #ifdef INSTANT_PRINT
     cout << "done. (took " << timeString(timer.value()) << ")" << endl;
+    #endif
 }
 
 Serializer::~Serializer() {
@@ -315,7 +317,9 @@ void Serializer::write(const std::string &filename, const ProgressCallback &prog
     #undef IMPLEMENT
 
     ply_close(ply);
+    #ifdef INSTANT_PRINT
     cout << "done. (took " << timeString(timer.value()) << ")" << endl;
+    #endif
 }
 
 size_t Serializer::totalSize() const {

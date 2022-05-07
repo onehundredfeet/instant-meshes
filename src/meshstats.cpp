@@ -21,8 +21,10 @@ MeshStats compute_mesh_stats(const MatrixXu &F, const MatrixXf &V,
     Timer<> timer;
     MeshStats stats;
     if (F.size() != 0) {
+        #ifdef INSTANT_PRINT
         cout << "Computing mesh statistics .. ";
         cout.flush();
+        #endif
         auto map = [&](const tbb::blocked_range<uint32_t> &range, MeshStats stats) -> MeshStats {
             for (uint32_t f = range.begin(); f != range.end(); ++f) {
                 Vector3f v[3] = { V.col(F(0, f)), V.col(F(1, f)), V.col(F(2, f)) };
@@ -96,9 +98,9 @@ MeshStats compute_mesh_stats(const MatrixXu &F, const MatrixXf &V,
         stats.mSurfaceArea = stats.mAverageEdgeLength = stats.mMaximumEdgeLength = 0;
         stats.mWeightedCenter /= V.cols();
     }
-
+#ifdef INSTANT_PRINT
     cout << "done. (took " << timeString(timer.value()) << ")" << endl;
-
+#endif
     return stats;
 }
 
@@ -108,8 +110,10 @@ void compute_dual_vertex_areas(const MatrixXu &F, const MatrixXf &V,
                                  const ProgressCallback &progress) {
     A.resize(V.cols());
     A.setZero();
+    #ifdef INSTANT_PRINT
     cout << "Computing dual vertex areas .. ";
     cout.flush();
+    #endif
     Timer<> timer;
 
     tbb::parallel_for(
@@ -146,6 +150,7 @@ void compute_dual_vertex_areas(const MatrixXu &F, const MatrixXf &V,
             SHOW_PROGRESS_RANGE(range, V.cols(), "Computing dual vertex areas");
         }
     );
-
+#ifdef INSTANT_PRINT
     cout << "done. (took " << timeString(timer.value()) << ")" << endl;
+#endif
 }

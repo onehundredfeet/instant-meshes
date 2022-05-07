@@ -144,7 +144,9 @@ void build_dedge(const MatrixXu &F, const MatrixXf &V, VectorXu &V2E,
     );
 
     if (!quiet) {
+        #ifdef INSTANT_PRINT
         cout << "done. (";
+        
         if (nonManifoldCounter)
             cout << nonManifoldCounter << " non-manifold vertices, ";
         if (boundaryCounter)
@@ -152,5 +154,6 @@ void build_dedge(const MatrixXu &F, const MatrixXf &V, VectorXu &V2E,
         if (isolatedCounter)
             cout << isolatedCounter << " isolated vertices, ";
         cout << "took " << timeString(timer.value()) << ")" << endl;
+        #endif
     }
 }

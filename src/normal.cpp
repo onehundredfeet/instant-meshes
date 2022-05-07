@@ -18,8 +18,10 @@ extern void
 generate_smooth_normals(const MatrixXu &F, const MatrixXf &V, MatrixXf &N,
                         bool deterministic,
                         const ProgressCallback &progress) {
+    #ifdef INSTANT_PRINT
     cout << "Computing vertex normals .. ";
     cout.flush();
+    #endif
 
     std::atomic<uint32_t> badFaces(0);
     Timer<> timer;
@@ -78,17 +80,21 @@ generate_smooth_normals(const MatrixXu &F, const MatrixXf &V, MatrixXf &N,
         }
     );
 
+#ifdef INSTANT_PRINT
     cout << "done. (";
     if (badFaces > 0)
         cout << badFaces << " degenerate faces, ";
     cout << "took " << timeString(timer.value()) << ")" << endl;
+#endif
 }
 
 void generate_smooth_normals(const MatrixXu &F, const MatrixXf &V, const VectorXu &V2E,
                              const VectorXu &E2E, const VectorXb &nonManifold,
                              MatrixXf &N, const ProgressCallback &progress) {
+                                 #ifdef INSTANT_PRINT
     cout << "Computing vertex normals .. ";
     cout.flush();
+    #endif
 
     std::atomic<uint32_t> badFaces(0);
     Timer<> timer;
@@ -158,10 +164,12 @@ void generate_smooth_normals(const MatrixXu &F, const MatrixXf &V, const VectorX
         }
     );
 
+#ifdef INSTANT_PRINT
     cout << "done. (";
     if (badFaces > 0)
         cout << badFaces << " degenerate faces, ";
     cout << "took " << timeString(timer.value()) << ")" << endl;
+#endif
 }
 
 void generate_crease_normals(MatrixXu &F, MatrixXf &V, const VectorXu &_V2E,
@@ -304,12 +312,14 @@ void generate_crease_normals(MatrixXu &F, MatrixXf &V, const VectorXu &_V2E,
     if (offset != (uint32_t) V.cols())
         throw std::runtime_error("Internal error (incorrect final vertex count)!");
 
+#ifdef INSTANT_PRINT
     cout << "done. (";
     if (badFaces > 0)
         cout << badFaces << " degenerate faces, ";
     if (creaseVert > 0)
         cout << creaseVert << " crease vertices, ";
     cout << "took " << timeString(timer.value()) << ")" << endl;
+    #endif
 }
 
 void generate_crease_normals(const MatrixXu &F, const MatrixXf &V,
@@ -320,8 +330,10 @@ void generate_crease_normals(const MatrixXu &F, const MatrixXf &V,
                              const ProgressCallback &progress) {
     const Float dpThreshold = std::cos(angleThreshold * M_PI / 180);
 
+#ifdef INSTANT_PRINT
     cout << "Computing vertex & crease normals .. ";
     cout.flush();
+    #endif
     creases.clear();
 
     Timer<> timer;
@@ -434,10 +446,12 @@ void generate_crease_normals(const MatrixXu &F, const MatrixXf &V,
         }
     );
 
+#ifdef INSTANT_PRINT
     cout << "done. (";
     if (badFaces > 0)
         cout << badFaces << " degenerate faces, ";
     if (!creases.empty())
         cout << creases.size() << " crease vertices, ";
     cout << "took " << timeString(timer.value()) << ")" << endl;
+    #endif
 }
